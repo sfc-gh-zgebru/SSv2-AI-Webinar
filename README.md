@@ -136,8 +136,102 @@ Local machine                          Snowflake Cloud
 | Linux (x86_64, ARM64) | Fully supported (glibc >= 2.26) |
 | Windows (x86_64) | Experimental (WSL2 or Git Bash recommended) |
 
+## Streamlit Dashboard Code (copy-paste ready)
+
+If you're following the manual steps instead of using the CoCo skills, use this Streamlit code for the live dashboard. It's compatible with Streamlit-in-Snowflake (SiS).
+
+> **Important:** Replace `DATABASE`, `SCHEMA`, and `TABLE` values with your own.
+
+```python
+import streamlit as st
+from snowflake.snowpark.context import get_active_session
+import time
+
+st.set_page_config(page_title="SSV2 Streaming Monitor", layout="wide")
+
+session = get_active_session()
+
+DATABASE = "SSV2_QUICKSTART_DB"
+SCHEMA   = "SSV2_SCHEMA"
+TABLE    = "SSV2_QUICKSTART_USERS"
+REFRESH_INTERVAL = 2
+
+st.title("Snowpipe Streaming V2 — Live Monitor")
+st.caption(f"Reading from `{DATABASE}.{SCHEMA}.{TABLE}` · refreshes every {REFRESH_INTERVAL}s")
+
+try:
+    metrics_df = session.sql(
+        f"""SELECT COUNT(*) AS total_rows,
+                   COALESCE(SUM(order_amount), 0) AS total_revenue
+            FROM {DATABASE}.{SCHEMA}.{TABLE}""",
+    ).to_pandas()
+    total_rows = metrics_df["TOTAL_ROWS"].iloc[0] if len(metrics_df) > 0 else 0
+    total_revenue = metrics_df["TOTAL_REVENUE"].iloc[0] if len(metrics_df) > 0 else 0
+except Exception as e:
+    st.error(f"Error querying table: {e}")
+    total_rows = 0
+    total_revenue = 0
+
+if total_rows > 0:
+    latest_df = session.sql(
+        f"""SELECT MAX(user_id) AS latest_id,
+                   COUNT(DISTINCT country) AS unique_countries
+            FROM {DATABASE}.{SCHEMA}.{TABLE}""",
+    ).to_pandas()
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Rows", f"{total_rows:,}")
+    col2.metric("Revenue Total", f"${total_revenue:,.2f}")
+    col3.metric("Latest User ID", latest_df["LATEST_ID"].iloc[0])
+    col4.metric("Unique Countries", latest_df["UNIQUE_COUNTRIES"].iloc[0])
+else:
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Rows", "0")
+    col2.metric("Revenue Total", "$0.00")
+    col3.metric("Latest User ID", "—")
+    col4.metric("Unique Countries", "—")
+    st.info("Waiting for data... Start the streaming demo to see rows appear.")
+
+st.subheader("Most Recent Records")
+if total_rows > 0:
+    recent_df = session.sql(
+        f"""SELECT user_id, first_name, last_name, email, country, order_amount
+            FROM {DATABASE}.{SCHEMA}.{TABLE}
+            ORDER BY user_id DESC
+            LIMIT 20""",
+    ).to_pandas()
+    st.dataframe(recent_df, use_container_width=True)
+else:
+    st.write("No data yet.")
+
+if total_rows > 0:
+    st.subheader("Revenue Over Time")
+    time_df = session.sql(
+        f"""SELECT
+                DATE_TRUNC('second', registration_date) AS time_bucket,
+                SUM(SUM(order_amount)) OVER (ORDER BY DATE_TRUNC('second', registration_date)) AS cumulative_revenue
+            FROM {DATABASE}.{SCHEMA}.{TABLE}
+            GROUP BY time_bucket
+            ORDER BY time_bucket""",
+    ).to_pandas()
+    st.line_chart(time_df.set_index("TIME_BUCKET"), y="CUMULATIVE_REVENUE", height=300)
+
+    st.subheader("Top 10 Countries by Revenue")
+    country_df = session.sql(
+        f"""SELECT country, SUM(order_amount) AS revenue
+            FROM {DATABASE}.{SCHEMA}.{TABLE}
+            GROUP BY country
+            ORDER BY revenue DESC
+            LIMIT 10""",
+    ).to_pandas()
+    st.dataframe(country_df, use_container_width=True)
+
+time.sleep(REFRESH_INTERVAL)
+st.experimental_rerun()
+```
+
 ## Resources
 
+- [SSv2 Quickstart Guide (web)](https://sfc-gh-zgebru.github.io/SSv2-AI-Webinar/) -- step-by-step tutorial
 - [Snowpipe Streaming V2 Overview](https://docs.snowflake.com/en/user-guide/snowpipe-streaming/snowpipe-streaming-high-performance-overview)
 - [SSv2 Getting Started Tutorial](https://docs.snowflake.com/en/user-guide/snowpipe-streaming/snowpipe-streaming-high-performance-getting-started)
 - [Python SDK Reference](https://docs.snowflake.com/en/user-guide/snowpipe-streaming-sdk-python/reference/latest/index)
