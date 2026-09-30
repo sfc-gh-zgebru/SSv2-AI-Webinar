@@ -147,7 +147,7 @@ import streamlit as st
 from snowflake.snowpark.context import get_active_session
 import time
 
-st.set_page_config(page_title="SSV2 Streaming Monitor", layout="wide")
+st.set_page_config(page_title="Snowpipe Streaming high-performance architecture Monitor", layout="wide")
 
 session = get_active_session()
 
@@ -156,7 +156,7 @@ SCHEMA   = "SSV2_SCHEMA"
 TABLE    = "SSV2_QUICKSTART_USERS"
 REFRESH_INTERVAL = 2
 
-st.title("Snowpipe Streaming V2 — Live Monitor")
+st.title("Snowpipe Streaming high-performance architecture — Live Monitor")
 st.caption(f"Reading from `{DATABASE}.{SCHEMA}.{TABLE}` · refreshes every {REFRESH_INTERVAL}s")
 
 try:
