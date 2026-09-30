@@ -1,0 +1,25 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-09-30T10:22:42+02:00",
+  "id": "getting-started-with-snowpipe-streaming-v2",
+  "duration": 36,
+  "title": "Getting Started with Snowpipe Streaming high-performance architecture and Cortex Code",
+  "summary": "Stream data into Snowflake in real-time using Snowpipe Streaming high-performance architecture with the Python SDK and monitor it with a live Streamlit dashboard.",
+  "source": "/tmp/ssv2-guide-fixed.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "snowflake-site:taxonomy/solution-center/certification/quickstart",
+    "snowflake-site:taxonomy/product/data-engineering"
+  ],
+  "tags": [
+    "web"
+  ],
+  "feedback": "https://github.com/Snowflake-Labs/sfguides/issues",
+  "url": "getting-started-with-snowpipe-streaming-v2"
+}
